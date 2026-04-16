@@ -1,15 +1,8 @@
 package evilcode.notification.hwpush;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
-
-import androidx.core.app.NotificationCompat;
 
 import com.huawei.hms.push.HmsMessageService;
 import com.huawei.hms.push.RemoteMessage;
@@ -18,32 +11,12 @@ import java.util.Arrays;
 
 public class MyPushService extends HmsMessageService {
     private static final String TAG = "MyPushService";
-    private static final String CHANNEL_ID = "haowai_push_channel";
-    private static final int NOTIFICATION_ID = 1001;
-    
     private DatabaseHelper databaseHelper;
-    private static int notificationCounter = 0;
 
     @Override
     public void onCreate() {
         super.onCreate();
         databaseHelper = new DatabaseHelper(this);
-        createNotificationChannel();
-    }
-
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "号外号外推送";
-            String description = "号外号外应用的推送通知";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
-            }
-        }
     }
 
     @Override
@@ -52,7 +25,7 @@ public class MyPushService extends HmsMessageService {
         if (!TextUtils.isEmpty(token)) {
             sendTokenToServer(token);
         }
-        MainActivity.sendUpdateUIBroadcast(this, "收到新Token");
+        MainActivity.sendUpdateUIBroadcast(this, "收到新Token: " + token);
     }
 
     private void sendTokenToServer(String token) {
@@ -79,54 +52,8 @@ public class MyPushService extends HmsMessageService {
             content = notification.getBody() != null ? notification.getBody() : "";
         }
 
-        if (notification == null && !TextUtils.isEmpty(data)) {
-            title = "号外号外";
-            content = data;
-            showNotification(title, content, data);
-        } else if (notification != null) {
-            showNotification(title, content, data);
-        }
-
         saveMessageRecord(title, content, data);
         MainActivity.sendUpdateUIBroadcast(this, "收到新消息: " + title);
-    }
-
-    private void showNotification(String title, String content, String data) {
-        notificationCounter++;
-        int notificationId = NOTIFICATION_ID + notificationCounter;
-
-        Intent intent = new Intent(this, NotificationClickReceiver.class);
-        intent.setAction("evilcode.notification.hwpush.NOTIFICATION_CLICK");
-        intent.putExtra("title", title);
-        intent.putExtra("content", content);
-        intent.putExtra("data", data);
-        intent.putExtra("notificationId", notificationId);
-        
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(
-            this, 
-            notificationId, 
-            intent, 
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle(title)
-                .setContentText(content)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true);
-
-        if (!TextUtils.isEmpty(data)) {
-            NotificationCompat.BigTextStyle bigTextStyle = new NotificationCompat.BigTextStyle()
-                    .bigText(content + "\n\n数据: " + data);
-            builder.setStyle(bigTextStyle);
-        }
-
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (notificationManager != null) {
-            notificationManager.notify(notificationId, builder.build());
-        }
     }
 
     private void logMessageDetails(RemoteMessage message) {

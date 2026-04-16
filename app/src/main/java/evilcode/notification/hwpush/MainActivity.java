@@ -22,18 +22,22 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.huawei.agconnect.config.AGConnectServicesConfig;
 import com.huawei.hmf.tasks.OnCompleteListener;
 import com.huawei.hmf.tasks.Task;
 import com.huawei.hms.aaid.HmsInstanceId;
 import com.huawei.hms.common.ApiException;
 import com.huawei.hms.push.HmsMessaging;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "HaoWaiHWPush";
@@ -46,15 +50,20 @@ public class MainActivity extends AppCompatActivity {
     private Button btnGetToken;
     private Button btnDeleteToken;
     private Button btnClearLog;
+    private Button btnClearMessages;
     private Button btnShowToken;
     private Button btnCopyToken;
-    private FloatingActionButton fabMessages;
+    private RecyclerView recyclerView;
+
+    private DatabaseHelper databaseHelper;
+    private MessageAdapter messageAdapter;
+    private List<MessageRecord> messageList;
 
     private boolean isNotificationEnabled = true;
     private String pushToken;
     private boolean isTokenVisible = false;
-    private Handler handler;
-    private Runnable hideTokenRunnable;
+    private Handler tokenHideHandler = new Handler(Looper.getMainLooper());
+    private Runnable tokenHideRunnable;
 
     private BroadcastReceiver updateReceiver = new BroadcastReceiver() {
         @Override
@@ -64,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
                 if (log != null) {
                     appendLog(log);
                 }
+                refreshMessageList();
             }
         }
     };
@@ -73,16 +83,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        handler = new Handler(Looper.getMainLooper());
-        hideTokenRunnable = this::hideToken;
-
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        
         initViews();
+        initDatabase();
         checkPermissions();
         registerReceiver();
 
+        // 自动获取Token
         getToken();
     }
 
@@ -93,16 +99,17 @@ public class MainActivity extends AppCompatActivity {
         btnGetToken = findViewById(R.id.btn_get_token);
         btnDeleteToken = findViewById(R.id.btn_delete_token);
         btnClearLog = findViewById(R.id.btn_clear_log);
+        btnClearMessages = findViewById(R.id.btn_clear_messages);
         btnShowToken = findViewById(R.id.btn_show_token);
         btnCopyToken = findViewById(R.id.btn_copy_token);
-        fabMessages = findViewById(R.id.fab_messages);
+        recyclerView = findViewById(R.id.recycler_view);
 
         btnGetToken.setOnClickListener(v -> getToken());
         btnDeleteToken.setOnClickListener(v -> deleteToken());
         btnClearLog.setOnClickListener(v -> tvLog.setText(""));
+        btnClearMessages.setOnClickListener(v -> showClearMessagesDialog());
         btnShowToken.setOnClickListener(v -> toggleTokenVisibility());
         btnCopyToken.setOnClickListener(v -> copyTokenToClipboard());
-        fabMessages.setOnClickListener(v -> openMessageList());
 
         switchNotification.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -111,7 +118,26 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        updateTokenDisplay();
+        messageList = new ArrayList<>();
+        messageAdapter = new MessageAdapter(this, messageList);
+        messageAdapter.setOnMessageDeleteListener(messageId -> {
+            databaseHelper.deleteMessage(messageId);
+            refreshMessageList();
+            Toast.makeText(MainActivity.this, "已删除消息记录", Toast.LENGTH_SHORT).show();
+        });
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(messageAdapter);
+    }
+
+    private void initDatabase() {
+        databaseHelper = new DatabaseHelper(this);
+        refreshMessageList();
+    }
+
+    private void refreshMessageList() {
+        messageList.clear();
+        messageList.addAll(databaseHelper.getAllMessages());
+        messageAdapter.notifyDataSetChanged();
     }
 
     private void checkPermissions() {
@@ -155,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
                     if (!TextUtils.isEmpty(pushToken)) {
                         Log.i(TAG, "获取Token成功: " + pushToken);
                         runOnUiThread(() -> {
+                            isTokenVisible = false;
                             updateTokenDisplay();
                             appendLog("获取Token成功");
                         });
@@ -181,10 +208,11 @@ public class MainActivity extends AppCompatActivity {
                     
                     Log.i(TAG, "注销Token成功");
                     runOnUiThread(() -> {
+                        cancelTokenHideRunnable();
                         pushToken = null;
                         isTokenVisible = false;
-                        handler.removeCallbacks(hideTokenRunnable);
-                        updateTokenDisplay();
+                        tvToken.setText("等待获取...");
+                        btnShowToken.setText("显示TOKEN");
                         appendLog("注销Token成功");
                     });
                 } catch (ApiException e) {
@@ -195,6 +223,74 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }.start();
+    }
+
+    private void updateTokenDisplay() {
+        if (TextUtils.isEmpty(pushToken)) {
+            tvToken.setText("等待获取...");
+            return;
+        }
+        
+        if (isTokenVisible) {
+            tvToken.setText(pushToken);
+            btnShowToken.setText("隐藏TOKEN");
+        } else {
+            tvToken.setText(maskToken(pushToken));
+            btnShowToken.setText("显示TOKEN");
+        }
+    }
+
+    private String maskToken(String token) {
+        if (TextUtils.isEmpty(token) || token.length() <= 8) {
+            return token;
+        }
+        int startLen = 4;
+        int endLen = 4;
+        String start = token.substring(0, startLen);
+        String end = token.substring(token.length() - endLen);
+        return start + "********" + end;
+    }
+
+    private void toggleTokenVisibility() {
+        if (TextUtils.isEmpty(pushToken)) {
+            Toast.makeText(this, "请先获取Token", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        cancelTokenHideRunnable();
+        
+        isTokenVisible = !isTokenVisible;
+        updateTokenDisplay();
+        
+        if (isTokenVisible) {
+            tokenHideRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    isTokenVisible = false;
+                    updateTokenDisplay();
+                }
+            };
+            tokenHideHandler.postDelayed(tokenHideRunnable, 10000);
+        }
+    }
+
+    private void cancelTokenHideRunnable() {
+        if (tokenHideRunnable != null) {
+            tokenHideHandler.removeCallbacks(tokenHideRunnable);
+            tokenHideRunnable = null;
+        }
+    }
+
+    private void copyTokenToClipboard() {
+        if (TextUtils.isEmpty(pushToken)) {
+            Toast.makeText(this, "请先获取Token", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText("Push Token", pushToken);
+        clipboard.setPrimaryClip(clip);
+        Toast.makeText(this, "Token已复制到剪贴板", Toast.LENGTH_SHORT).show();
     }
 
     private void setNotificationEnabled(boolean enabled) {
@@ -226,68 +322,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void toggleTokenVisibility() {
-        if (TextUtils.isEmpty(pushToken)) {
-            Toast.makeText(this, "暂无Token可显示", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        isTokenVisible = !isTokenVisible;
-        if (isTokenVisible) {
-            btnShowToken.setText("隐藏TOKEN");
-            handler.removeCallbacks(hideTokenRunnable);
-            handler.postDelayed(hideTokenRunnable, 10000);
-        } else {
-            btnShowToken.setText("显示TOKEN");
-            handler.removeCallbacks(hideTokenRunnable);
-        }
-        updateTokenDisplay();
-    }
-
-    private void hideToken() {
-        isTokenVisible = false;
-        btnShowToken.setText("显示TOKEN");
-        updateTokenDisplay();
-    }
-
-    private void updateTokenDisplay() {
-        if (TextUtils.isEmpty(pushToken)) {
-            tvToken.setText("等待获取...");
-            btnShowToken.setEnabled(false);
-            btnCopyToken.setEnabled(false);
-        } else {
-            if (isTokenVisible) {
-                tvToken.setText(pushToken);
-            } else {
-                tvToken.setText(getMaskedToken(pushToken));
-            }
-            btnShowToken.setEnabled(true);
-            btnCopyToken.setEnabled(true);
-        }
-    }
-
-    private String getMaskedToken(String token) {
-        if (token == null || token.length() <= 8) {
-            return "********";
-        }
-        return token.substring(0, 4) + "****" + token.substring(token.length() - 4);
-    }
-
-    private void copyTokenToClipboard() {
-        if (TextUtils.isEmpty(pushToken)) {
-            Toast.makeText(this, "暂无Token可复制", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("Push Token", pushToken);
-        clipboard.setPrimaryClip(clip);
-        Toast.makeText(this, "Token已复制到剪贴板", Toast.LENGTH_SHORT).show();
-    }
-
-    private void openMessageList() {
-        Intent intent = new Intent(this, MessageListActivity.class);
-        startActivity(intent);
+    private void showClearMessagesDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("确认删除")
+                .setMessage("确定要删除所有消息记录吗？")
+                .setPositiveButton("确定", (dialog, which) -> {
+                    databaseHelper.deleteAllMessages();
+                    refreshMessageList();
+                    Toast.makeText(MainActivity.this, "已清空所有消息记录", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
 
     private void appendLog(String log) {
@@ -305,9 +350,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (handler != null) {
-            handler.removeCallbacks(hideTokenRunnable);
-        }
         unregisterReceiver(updateReceiver);
+        cancelTokenHideRunnable();
     }
 }

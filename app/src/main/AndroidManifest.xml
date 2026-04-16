@@ -21,26 +21,12 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".MessageListActivity"
-            android:exported="false"
-            android:theme="@style/AppTheme.NoActionBar" />
-
-        <receiver
-            android:name=".NotificationClickReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="evilcode.notification.hwpush.NOTIFICATION_CLICK" />
-            </intent-filter>
-        </receiver>
 
         <service
             android:name=".MyPushService"
