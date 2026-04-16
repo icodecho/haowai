@@ -65,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
                 if (log != null) {
                     appendLog(log);
                 }
-                refreshMessageList();
             }
         }
     };
