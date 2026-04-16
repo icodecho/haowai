@@ -21,9 +21,15 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
     private List<MessageRecord> messageList;
     private Context context;
     private OnMessageDeleteListener deleteListener;
+    private OnMessageClickListener clickListener;
 
     public interface OnMessageDeleteListener {
         void onDelete(long messageId);
+    }
+
+    public interface OnMessageClickListener {
+        void onMessageClick(MessageRecord message);
+        void onMessageLongClick(MessageRecord message);
     }
 
     public MessageAdapter(Context context, List<MessageRecord> messageList) {
@@ -33,6 +39,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
 
     public void setOnMessageDeleteListener(OnMessageDeleteListener listener) {
         this.deleteListener = listener;
+    }
+
+    public void setOnMessageClickListener(OnMessageClickListener listener) {
+        this.clickListener = listener;
     }
 
     @NonNull
@@ -54,17 +64,14 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         holder.tvTime.setText(timeStr);
 
         holder.itemView.setOnClickListener(v -> {
-            String fullText = "标题: " + (message.getTitle() != null ? message.getTitle() : "") + "\n" +
-                    "内容: " + (message.getContent() != null ? message.getContent() : "") + "\n" +
-                    "数据: " + (message.getData() != null ? message.getData() : "") + "\n" +
-                    "时间: " + timeStr;
-            copyToClipboard(fullText);
-            Toast.makeText(context, "已复制到剪贴板", Toast.LENGTH_SHORT).show();
+            if (clickListener != null) {
+                clickListener.onMessageClick(message);
+            }
         });
 
         holder.itemView.setOnLongClickListener(v -> {
-            if (deleteListener != null) {
-                deleteListener.onDelete(message.getId());
+            if (clickListener != null) {
+                clickListener.onMessageLongClick(message);
             }
             return true;
         });

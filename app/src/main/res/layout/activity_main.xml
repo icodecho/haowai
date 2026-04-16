@@ -5,193 +5,197 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        android:layout_marginBottom="12dp">
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-        <LinearLayout
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:title="号外号外"
+            app:titleTextColor="@android:color/white" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="12dp">
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            android:layout_marginBottom="12dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="推送Token"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp"/>
-
-            <TextView
-                android:id="@+id/tv_token"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="等待获取..."
-                android:background="#F5F5F5"
-                android:padding="8dp"
-                android:textIsSelectable="true"
-                android:layout_marginBottom="12dp"/>
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="推送Token"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:id="@+id/tv_token"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="等待获取..."
+                    android:background="#F5F5F5"
+                    android:padding="8dp"
+                    android:textIsSelectable="true"
+                    android:layout_marginBottom="12dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <Button
+                        android:id="@+id/btn_get_token"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="获取Token"
+                        android:layout_marginEnd="8dp"/>
+
+                    <Button
+                        android:id="@+id/btn_delete_token"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="注销Token"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btn_show_token"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="显示TOKEN"
+                        android:layout_marginEnd="8dp"/>
+
+                    <Button
+                        android:id="@+id/btn_copy_token"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="复制TOKEN"/>
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            android:layout_marginBottom="12dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+                android:padding="12dp"
+                android:gravity="center_vertical">
 
-                <Button
-                    android:id="@+id/btn_get_token"
+                <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="获取Token"
-                    android:layout_marginEnd="8dp"/>
+                    android:text="通知栏消息"
+                    android:textStyle="bold"/>
 
-                <Button
-                    android:id="@+id/btn_delete_token"
-                    android:layout_width="0dp"
+                <Switch
+                    android:id="@+id/switch_notification"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="注销Token"/>
+                    android:checked="true"/>
             </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            android:layout_marginBottom="12dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical"
+                android:padding="12dp">
 
                 <Button
-                    android:id="@+id/btn_show_token"
-                    android:layout_width="0dp"
+                    android:id="@+id/btn_message_list"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="显示TOKEN"
-                    android:layout_marginEnd="8dp"/>
-
-                <Button
-                    android:id="@+id/btn_copy_token"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="复制TOKEN"/>
+                    android:text="查看消息记录"
+                    android:textSize="14sp"/>
             </LinearLayout>
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        android:layout_marginBottom="12dp">
+        </androidx.cardview.widget.CardView>
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="12dp"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="通知栏消息"
-                android:textStyle="bold"/>
-
-            <Switch
-                android:id="@+id/switch_notification"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"/>
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="8dp">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="消息记录"
-                android:textStyle="bold"
-                android:textSize="16sp"/>
-
-            <Button
-                android:id="@+id/btn_clear_messages"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="清空"
-                android:textSize="12sp"
-                style="@style/Widget.AppCompat.Button.Borderless"/>
-        </LinearLayout>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="#F5F5F5"
-            android:padding="8dp"/>
-    </LinearLayout>
+            android:orientation="vertical">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginTop="8dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="操作日志"
-                android:textStyle="bold"
-                android:textSize="16sp"/>
-
-            <Button
-                android:id="@+id/btn_clear_log"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="清空"
-                android:textSize="12sp"
-                style="@style/Widget.AppCompat.Button.Borderless"/>
-        </LinearLayout>
-
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:background="#E0E0E0"
-            android:padding="8dp">
-
-            <TextView
-                android:id="@+id/tv_log"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="12sp"/>
-        </ScrollView>
-    </LinearLayout>
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="操作日志"
+                    android:textStyle="bold"
+                    android:textSize="16sp"/>
+
+                <Button
+                    android:id="@+id/btn_clear_log"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="清空"
+                    android:textSize="12sp"
+                    style="@style/Widget.AppCompat.Button.Borderless"/>
+            </LinearLayout>
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#E0E0E0"
+                android:padding="8dp">
+
+                <TextView
+                    android:id="@+id/tv_log"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"/>
+            </ScrollView>
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>
